@@ -1,2 +1,2 @@
 Litmus is an explorer for Alkali variables and element updaters. It is recommended that you load litmus with a bookmarklet (bookmark this link, and navigate to it on the page running Alkali):
-[javascript:require(['litmus/explorer'], function(litmus){litmus();});void(0);](Bookmarklet)
+[Bookmarklet](javascript:require(['litmus/explorer'], function(litmus){litmus();});void(0);)
