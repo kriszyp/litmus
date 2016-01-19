@@ -28,15 +28,15 @@ define(['./create'], function(create){
 					// move down
 					newPosition = {
 						x: position.x,
-						y: cell.y + cell.height,
-						moved: cell.y + cell.height - position.y
+						y: cell.y + cell.height + 5,
+						moved: cell.y + cell.height - position.y + 5
 					};
 				}else{
 					// move up
 					newPosition = {
 						x: position.x,
-						y: cell.y - position.height,
-						moved: cell.y - (position.y + position.height)
+						y: cell.y - position.height - 5,
+						moved: (position.y + position.height) - cell.y + 5
 					};
 				}
 				break;
@@ -57,10 +57,10 @@ define(['./create'], function(create){
 		var fromX = from.x;
 		var fromY = from.y;
 		fromX = Math.floor(fromX / 200) * 200;
-		var right = tryPosition({x: fromX + 200, y: fromY});
+		var right = tryPosition({x: fromX + 200, y: fromY, height: from.height, width: from.width});
 		if(right.moved){
-			var left = tryPosition({x: fromX - 200, y: fromY});
-			if(left.moved > right.moved){
+			var left = tryPosition({x: fromX - 200, y: fromY, height: from.height, width: from.width});
+			if(left.moved + 10 > right.moved){
 				best = right;
 			}else{
 				best = left;
@@ -74,10 +74,10 @@ define(['./create'], function(create){
 	}
 
 	function makeConnection(source, target, label){
-		var sourceX = source.x + (source.width || 100) / 2;
-		var sourceY = source.y + (source.height || 30) / 2;
-		var targetX = target.x + (target.width || 100) / 2;
-		var targetY = target.y + (target.height || 30) / 2;
+		var sourceX = source.x;
+		var sourceY = source.y;
+		var targetX = target.x;
+		var targetY = target.y;
 		var angle = Math.atan((targetY - sourceY) / (targetX - sourceX));
 		if(targetX < sourceX){
 			angle += Math.PI;
@@ -87,22 +87,23 @@ define(['./create'], function(create){
 			left: sourceX + 'px',
 			top: sourceY + 'px',
 			backgroundColor: '#888',
-			height: '4px',
+			height: '3px',
 			width: Math.sqrt(Math.pow(targetX - sourceX, 2) + Math.pow(targetY - sourceY, 2)) + 'px',
-			zIndex: Math.min(source.z, target.z) - 1,
+			zIndex: 200,
 			transformOrigin: '0 0',
 			transform: 'rotate(' + angle + 'rad)'
 		});
 		var arrowTriangle = create.triangle(arrow);
 		arrowTriangle.style.position = 'absolute';
 		arrowTriangle.style.left = '50%';
-		arrowTriangle.style.top = '-7px';
-		midX = sourceX + targetX / 2;
-		midY = sourceY + targetY / 2;
+		arrowTriangle.style.top = '-4.5px';
+		midX = (sourceX + targetX) / 2;
+		midY = (sourceY + targetY) / 2;
 		labelNode = create(container, 'div', {
 			position: 'absolute',
 			left: midX + 'px',
 			top: midY + 'px',
+			zIndex: 200
 		});
 		labelNode.textContent = label;
 		return arrow;
@@ -130,22 +131,50 @@ define(['./create'], function(create){
 			width: node.offsetWidth
 		};
 	}
+	var allEdges = [];
+	function drawEdges(edges){
+		edges.forEach(function(edge){
+			if(edge.element && edge.element.parentNode){
+				edge.element.parentNode.removeChild(edge.element);
+			}
+			if(edge.source.offsetParent && edge.target.offsetParent){
+				var source = getPosition(edge.source);
+				var target = getPosition(edge.target);
+				if(source.x < target.x){
+					source.x += source.width;
+				}else{
+					target.x += target.width;
+				}
+				var slope = Math.max(0, Math.min(1, (target.y - source.y) / Math.abs(target.x - source.x) + 0.5));
+				source.y += source.height * slope;
+				target.y += target.height * (1 - slope);
+				edge.element = makeConnection(source, target, edge.label);
+			}
+		});
+
+	}
 	return {
 		setContainer: function(containerElement){
 			container = containerElement;
+			columns = [];
 		},
 		layout: function(nodes, edges){
 			nodes.forEach(function(node){
 				var to = node.to;
 				if(to){
-					var position = findPosition(getPosition(to));
+					var toPosition = getAbsolutePosition(to);
+					toPosition.width = node.offsetWidth;
+					toPosition.height = node.offsetHeight;
+					var position = findPosition(toPosition);
 					node.style.left = position.x + 'px';
 					node.style.top = position.y + 'px';
 				}
 			});
-			edges.forEach(function(edge){
-				makeConnection(getPosition(edge.source), getPosition(edge.target), edge.label);
-			});
+			drawEdges(edges);
+			allEdges = allEdges.concat(edges);
+		},
+		refresh: function(){
+			drawEdges(allEdges);
 		}
 	};
 });

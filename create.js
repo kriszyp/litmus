@@ -10,11 +10,11 @@ define([], function(){
 	};
 	function makeTriangle(parent){
 		return create(parent, 'div', {
-			width: '0',
+			width: '10px',
 			height: '0',
-			borderTop: '10px solid transparent',
-			borderBottom: '10px solid transparent',
-			borderLeft: '10px solid #888'
+			borderTop: '6px solid transparent',
+			borderBottom: '6px solid transparent',
+			borderLeft: '6px solid #888'
 		});
 	}
 	create.triangle = makeTriangle;

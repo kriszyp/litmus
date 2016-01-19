@@ -35,7 +35,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			position: 'absolute',
 			left: '0',
 			top: '0',
-			height: '0',
+			bottom: '0',
 			right: '0',
 			fontFamily: 'sans-serif, Arial',
 			fontSize: '10px',
@@ -130,18 +130,23 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			});
 		}
 		function createVariableBox(text, parent){
-			var box = (parent || container).appendChild(document.createElement('div'));
+			var box = create(parent || container, 'div', {
+				boxShadow: '2px 2px 3px #888',
+				backgroundColor: '#eee',
+				border: '1px solid #888',
+				borderRadius: '3px',
+				padding: '4px',
+				zIndex: 100,
+				maxHeight: '100%',
+				overflow: 'auto'
+			});
 			if(!parent){
 				box.style.position = 'absolute';
+				box.draggable = true;
 			}else{
 				box.style.margin = '5px';
 			}
-			box.style.boxShadow = '2px 2px 3px #888';
-			box.style.backgroundColor = '#eee';
-			box.style.border = '1px solid #888';
-			box.style.borderRadius = '3px';
-			box.style.padding = '4px';
-			box.style.zIndex = 100;
+
 			box.textContent = text;
 			return box;
 		}
@@ -165,22 +170,25 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			var variableElement = createVariableBox('', parent);
 			variableElement.to = dependent;
 			processed[variableId] = variableElement;
-			var triangle = create.triangle(variableElement);
-			triangle.style.display = 'inline-block';
-			var expanded;
-			variableElement.expand = triangle.onclick = function(expand){
-				expanded = typeof expand == 'boolean' ? expand : !expanded;
-				if(expand.stopPropagation){
-					expand.stopPropagation();
-				}
-				if(expanded){
-					childContainer.style.display = 'block';
-					triangle.style.transform = 'rotate(90deg)';
-				}else{					
-					childContainer.style.display = 'none';
-					triangle.style.transform = 'rotate(0)';
-				}
-			};
+			if(variable._properties){
+				var triangle = create.triangle(variableElement);
+				triangle.style.display = 'inline-block';
+				var expanded;
+				variableElement.expand = triangle.onclick = function(expand){
+					expanded = typeof expand == 'boolean' ? expand : !expanded;
+					if(expand.stopPropagation){
+						expand.stopPropagation();
+					}
+					if(expanded){
+						childContainer.style.display = 'block';
+						triangle.style.transform = 'rotate(90deg)';
+					}else{					
+						childContainer.style.display = 'none';
+						triangle.style.transform = 'rotate(0)';
+					}
+					graph.refresh();
+				};
+			}
 			var labelNode = create(variableElement, 'span');
 			labelNode.textContent = 'undefined';
 			if(key){
@@ -218,10 +226,10 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 				}
 			}
 			if(variable.functionVariable){
-				addConnection(processVariable(variable.functionVariable, dependent, variableElement), variableElement, 'map');
+				processVariable(variable.functionVariable, dependent, variableElement);
 			}
 			if(variable.notifyingValue){
-				addConnection(processVariable(variable.notifyingValue, dependent, variableElement), variableElement, 'value');
+				addConnection(processVariable(variable.notifyingValue, dependent), variableElement, 'value');
 			}
 			return processed[variableId] = variableElement;
 		}
@@ -229,6 +237,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 		for(var i = 0, l = allElements.length; i < l; i++){
 			var element = allElements[i];
 			if(element.offsetParent && element.alkaliRenderers){
+				var needsRerendering = element.className.indexOf('needs-rerendering') > -1; // sound the alarm
 				var height = element.offsetHeight;
 				var width = element.offsetWidth;
 				var elementOverlay = create(container, 'div', {
@@ -237,13 +246,16 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 					top: getAbsoluteY(element) + 'px',
 					width: width + 'px',
 					height: height + 'px',
-					backgroundColor: '#00f',
+					backgroundColor: needsRerendering ? '#f00' : '#00f',
 					opacity: 0.2,
 					zIndex: 1
 				});
 				elementOverlay.className = 'element-overlay';
 				elementOverlay.nodeId = 'element-' + i;
 				elementOverlay.targetElement = element;
+				if(needsRerendering){
+					alert('An element that was marked as hidden, for deferred rerendering is visible, and is marked in red. Ensure that Updater.onShowElement is called when any hidden variable-driven element is reshown');
+				}
 			}
 		}
 
@@ -270,7 +282,24 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 		trackButton.addEventListener('click', function(){
 			instrumentVariables();
 		});
-
+		var draggedVariable, offsetX, offsetY;
+		container.addEventListener('dragstart', function(event){
+			console.log("dragstart");
+			draggedVariable = event.target;
+			offsetX = draggedVariable.offsetLeft - event.clientX;
+			offsetY = draggedVariable.offsetTop - event.clientY;
+		});
+		container.addEventListener('dragover', function(event){
+			event.preventDefault();
+			event.dataTransfer.dropEffect = 'move';
+		});
+		container.addEventListener('drop', function(event){
+			if(draggedVariable){
+				draggedVariable.style.left = (event.clientX + offsetX) + 'px';
+				draggedVariable.style.top = (event.clientY + offsetY) + 'px';
+				graph.refresh();
+			}
+		});
 
 		container.addEventListener('click', function(event){
 			var litmusElement = event.target;
