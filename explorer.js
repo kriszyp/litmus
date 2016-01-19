@@ -171,7 +171,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			variableElement.to = dependent;
 			processed[variableId] = variableElement;
 			if(variable._properties){
-				var triangle = create.triangle(variableElement);
+				var triangle = create.triangle(variableElement, 6);
 				triangle.style.display = 'inline-block';
 				var expanded;
 				variableElement.expand = triangle.onclick = function(expand){
@@ -192,7 +192,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			var labelNode = create(variableElement, 'span');
 			labelNode.textContent = 'undefined';
 			if(key){
-				labelNode.textContent = key + ': undefined';
+				labelNode.textContent = key + ':';
 			}
 			new Updater.ElementUpdater({
 				element: labelNode,
@@ -311,6 +311,10 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 					editDialog(litmusElement);
 					return;
 				}
+				if(litmusElement.renderer){
+					alert(litmusElement.renderer.renderUpdate);
+					return;
+				}
 				if(litmusElement.targetElement){
 					var element = litmusElement.targetElement;
 					if(element){
@@ -318,8 +322,8 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 						var renderers = element.alkaliRenderers;
 						for(var j = 0; j < renderers.length; j++){
 							var renderer = renderers[j];
-							var rendererBox = createVariableBox(fitString('Renderer ' + (renderer.name || '')));
-
+							var rendererBox = createVariableBox(fitString((renderer.type || 'Renderer') + ' ' + (renderer.name || '')));
+							rendererBox.renderer = renderer;
 							newNodes.push(rendererBox);
 							rendererBox.to = litmusElement;
 							addConnection(rendererBox, litmusElement, '');

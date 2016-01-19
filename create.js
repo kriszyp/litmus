@@ -8,13 +8,14 @@ define([], function(){
 		}
 		return element;
 	};
-	function makeTriangle(parent){
+	function makeTriangle(parent, size){
 		return create(parent, 'div', {
-			width: '10px',
+			width: '0',
 			height: '0',
-			borderTop: '6px solid transparent',
-			borderBottom: '6px solid transparent',
-			borderLeft: '6px solid #888'
+			maringRight: '6px',
+			borderTop: size + 'px solid transparent',
+			borderBottom: size + 'px solid transparent',
+			borderLeft: size + 'px solid #888'
 		});
 	}
 	create.triangle = makeTriangle;

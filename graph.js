@@ -82,7 +82,8 @@ define(['./create'], function(create){
 		if(targetX < sourceX){
 			angle += Math.PI;
 		}
-		var arrow = create(container, 'div', {
+		var arrowContainer = create(container, 'div');
+		var arrow = create(arrowContainer, 'div', {
 			position: 'absolute',
 			left: sourceX + 'px',
 			top: sourceY + 'px',
@@ -93,20 +94,20 @@ define(['./create'], function(create){
 			transformOrigin: '0 0',
 			transform: 'rotate(' + angle + 'rad)'
 		});
-		var arrowTriangle = create.triangle(arrow);
+		var arrowTriangle = create.triangle(arrow, 9);
 		arrowTriangle.style.position = 'absolute';
 		arrowTriangle.style.left = '50%';
-		arrowTriangle.style.top = '-4.5px';
+		arrowTriangle.style.top = '-7px';
 		midX = (sourceX + targetX) / 2;
 		midY = (sourceY + targetY) / 2;
-		labelNode = create(container, 'div', {
+		labelNode = create(arrowContainer, 'div', {
 			position: 'absolute',
 			left: midX + 'px',
 			top: midY + 'px',
 			zIndex: 200
 		});
 		labelNode.textContent = label;
-		return arrow;
+		return arrowContainer;
 	}
 	function getAbsolutePosition(node){
 		if(node.offsetParent){
