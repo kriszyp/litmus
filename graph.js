@@ -4,6 +4,7 @@ define(['./create'], function(create){
 	var container;
 	var boundX = window.innerWidth;
 	var boundY = window.innerHeight;
+	var allNodes = [];
 	function tryPosition(position){
 		var column = columns[position.x];
 		if(!column){
@@ -52,25 +53,45 @@ define(['./create'], function(create){
 		}
 		return newPosition;
 	}
+
 	function findPosition(from){
 		var best, bestScore = 1;
 		var fromX = from.x;
 		var fromY = from.y;
-		fromX = Math.floor(fromX / 200) * 200;
-		var right = tryPosition({x: fromX + 200, y: fromY, height: from.height, width: from.width});
-		if(right.moved){
-			var left = tryPosition({x: fromX - 200, y: fromY, height: from.height, width: from.width});
-			if(left.moved + 10 > right.moved){
-				best = right;
-			}else{
-				best = left;
-			}
-		}else{
-			best = right;
+		var bestProximity = Infinity;
+		var bestPosition;
+		tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 100);
+		if (bestProximity > 0.00001) {
+			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 50);
+			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 200);			
 		}
-		best.z = from.z;
-		columns[best.x].unshift(best);
-		return best;
+		function tryDirections(directions, multiplier){
+			for(var i = 0; i < directions.length; i++){
+				var directionX = directions[i][0] * multiplier;
+				var directionY = directions[i][1] * multiplier;
+				var proposedX = fromX + directionX;
+				var proposedY = fromY + directionY;
+				var proximity = 1 / Math.pow(Math.max(proposedX, 1), 4) +
+					1 / Math.pow(Math.max(boundX - (proposedX + from.width), 1), 4) +
+					1 / Math.pow(Math.max(proposedY, 1), 4) +
+					1 / Math.pow(Math.max(boundY - (proposedY + from.height), 1), 4);
+				for(var j = 0; j < allNodes.length; j++){
+					var node = allNodes[j];
+					var nodePosition = getPosition(node);
+					proximity += 1 / Math.pow(
+						Math.pow(Math.abs(nodePosition.x + nodePosition.width - proposedX) + Math.abs(proposedX + from.width - nodePosition.x), 2) +
+						Math.pow(Math.abs(nodePosition.y + nodePosition.height - proposedY) + Math.abs(proposedY + from.height - nodePosition.y), 2), 2);
+				}
+				if(proximity < bestProximity){
+					bestProximity = proximity;
+					bestPosition = {
+						x: proposedX,
+						y: proposedY
+					};
+				}
+			}
+		}
+		return bestPosition;
 	}
 
 	function makeConnection(source, target, label){
@@ -158,6 +179,7 @@ define(['./create'], function(create){
 		setContainer: function(containerElement){
 			container = containerElement;
 			columns = [];
+			allNodes = [];
 		},
 		layout: function(nodes, edges){
 			nodes.forEach(function(node){
@@ -170,6 +192,7 @@ define(['./create'], function(create){
 					node.style.left = position.x + 'px';
 					node.style.top = position.y + 'px';
 				}
+				allNodes.push(node);
 			});
 			drawEdges(edges);
 			allEdges = allEdges.concat(edges);
