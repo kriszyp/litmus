@@ -30,36 +30,89 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 	}
 	var container;
 	return function(options){
+		var justRefresh = false
 		if(container){
 			container.style.display = 'block'
-			return
+			justRefresh = true
+
+		} else {		
+			container = create(document.body, 'div', {
+				position: 'absolute',
+				left: '0',
+				top: '0',
+				height: '0',
+				right: '0',
+				fontFamily: 'sans-serif, Arial',
+				fontSize: '10px',
+				zIndex: '1000000'
+			})
+			graph.setContainer(container)
 		}
-		var nextId = 1
-		var allElements = document.documentElement.getElementsByTagName('*')
-		container = create(document.body, 'div', {
-			position: 'absolute',
-			left: '0',
-			top: '0',
-			bottom: '0',
-			right: '0',
-			fontFamily: 'sans-serif, Arial',
-			fontSize: '10px',
-			zIndex: '1000000'
-		})
-		graph.setContainer(container)
+
 		var boundX = window.innerWidth
 		var boundY = window.innerHeight
+		var allElements = document.documentElement.getElementsByTagName('*')
+		
+		for(var i = 0, l = allElements.length; i < l; i++){
+			var element = allElements[i]
+			if(element.offsetParent && element.alkaliRenderers){
+				var needsRerendering = element.className.indexOf('needs-rerendering') > -1; // sound the alarm
+				var height = element.offsetHeight
+				var width = element.offsetWidth
+				var elementOverlay = create(container, 'div', {
+					position: 'absolute',
+					left: getAbsoluteX(element) + 'px',
+					top: getAbsoluteY(element) + 'px',
+					width: width + 'px',
+					height: height + 'px',
+					backgroundColor: needsRerendering ? '#f00' : '#00f',
+					opacity: 0.2,
+					zIndex: 1
+				})
+				elementOverlay.className = 'element-overlay'
+				elementOverlay.nodeId = 'element-' + i
+				elementOverlay.targetElement = element
+				if(needsRerendering){
+					alert('An element that was marked as hidden, for deferred rerendering, is visible, and is marked in red. Ensure that Updater.onShowElement is called when any hidden variable-driven element is reshown')
+				}
+			}
+		}
+		var closeOverlayButton = create(container, 'div', {
+			position: 'absolute',
+			left: (boundX - 60) + 'px',
+			top: '20px',
+			cursor: 'pointer',
+			fontSize: '40px',
+			zIndex: 5000,
+		})
+		closeOverlayButton.textContent = 'X'
+		closeOverlayButton.addEventListener('click', function(){
+			var oldElementOverlays = document.querySelectorAll('.element-overlay')
+			for (var i = 0; i < oldElementOverlays.length; i++) {
+				container.removeChild(oldElementOverlays[i])
+			}
+			container.removeChild(closeOverlayButton)
+		})
+
+		if (justRefresh) {
+			return
+		}
+
+
+		var nextId = 1
 		var nodes = []
 		var newNodes = []
 		var newEdges = []
 
 		var processed = {}
 		function addConnection(source, target, label){
-			newEdges.push({
+			var edge = {
 				source: source,
 				target: target,
 				label: label
-			})
+			}
+			newEdges.push(edge)
+			return edge
 		}
 		function valueToString(value){
 			return fitString('' + value)
@@ -143,7 +196,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 				padding: '4px',
 				paddingRight: '13px',
 				zIndex: 100,
-				maxHeight: '100%',
+				maxHeight: boundY + 'px',
 				overflow: 'auto'
 			})
 			box.textContent = text
@@ -250,46 +303,33 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 				processVariable(variable.functionVariable, dependent, variableElement)
 			}
 			if(variable.notifyingValue){
-				addConnection(processVariable(variable.notifyingValue, dependent), variableElement, 'value')
+				var previousNotifyingValue;
+				new Updater({
+					variable: variable,
+					element: document.body,
+					update: function () {
+						if (previousNotifyingValue) {
+							graph.removeEdge(previousNotifyingValue)
+						}
+						previousNotifyingValue = addConnection(processVariable(variable.notifyingValue, dependent), variableElement, 'value')
+					}
+				})
+				
 			}
 			return processed[variableId] = variableElement
 		}
 
-		for(var i = 0, l = allElements.length; i < l; i++){
-			var element = allElements[i]
-			if(element.offsetParent && element.alkaliRenderers){
-				var needsRerendering = element.className.indexOf('needs-rerendering') > -1; // sound the alarm
-				var height = element.offsetHeight
-				var width = element.offsetWidth
-				var elementOverlay = create(container, 'div', {
-					position: 'absolute',
-					left: getAbsoluteX(element) + 'px',
-					top: getAbsoluteY(element) + 'px',
-					width: width + 'px',
-					height: height + 'px',
-					backgroundColor: needsRerendering ? '#f00' : '#00f',
-					opacity: 0.2,
-					zIndex: 1
-				})
-				elementOverlay.className = 'element-overlay'
-				elementOverlay.nodeId = 'element-' + i
-				elementOverlay.targetElement = element
-				if(needsRerendering){
-					alert('An element that was marked as hidden, for deferred rerendering, is visible, and is marked in red. Ensure that Updater.onShowElement is called when any hidden variable-driven element is reshown')
-				}
-			}
-		}
 
-		var closeButton = create(container, 'div', {
+		var hideEverythingButton = create(container, 'div', {
 			position: 'absolute',
 			left: (boundX - 60) + 'px',
 			top: '20px',
 			cursor: 'pointer',
 			fontSize: '40px',
-			zIndex: 5000,
+			zIndex: 4000,
 		})
-		closeButton.textContent = 'X'
-		closeButton.addEventListener('click', function(){
+		hideEverythingButton.textContent = 'X'
+		hideEverythingButton.addEventListener('click', function(){
 			container.style.display = 'none'
 		})
 

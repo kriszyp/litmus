@@ -61,9 +61,11 @@ define(['./create'], function(create){
 		var bestProximity = Infinity
 		var bestPosition
 		tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 100)
-		if (bestProximity > 0.00001) {
+		console.log('good enough from first round', bestProximity < 0.000000001)
+		if (bestProximity > 0.000000001) {
 			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 50)
-			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 200);			
+			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 200)
+			tryDirections([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]], 400)		
 		}
 		function tryDirections(directions, multiplier){
 			for(var i = 0; i < directions.length; i++){
@@ -71,16 +73,32 @@ define(['./create'], function(create){
 				var directionY = directions[i][1] * multiplier
 				var proposedX = fromX + directionX
 				var proposedY = fromY + directionY
-				var proximity = 1 / Math.pow(Math.max(proposedX, 1), 4) +
-					1 / Math.pow(Math.max(boundX - (proposedX + from.width), 1), 4) +
-					1 / Math.pow(Math.max(proposedY, 1), 4) +
-					1 / Math.pow(Math.max(boundY - (proposedY + from.height), 1), 4)
+				if (proposedX + from.width > boundX) {
+					proposedX = boundX - from.width
+				}
+				if (proposedY + from.height > boundY) {
+					proposedY = boundY - from.height
+				}
+				if (proposedX < 0) {
+					proposedX = 0
+				}
+				if (proposedY < 0) {
+					proposedY = 0
+				}
+				var proximity = 1 / Math.pow(Math.max(proposedX, 0) + 100, 4) +
+					1 / Math.pow(Math.max(boundX - (proposedX + from.width), 0) + 100, 4) +
+					1 / Math.pow(Math.max(proposedY, 0) + 100, 4) +
+					1 / Math.pow(Math.max(boundY - (proposedY + from.height), 0) + 100, 4)
 				for(var j = 0; j < allNodes.length; j++){
 					var node = allNodes[j]
 					var nodePosition = getPosition(node)
 					proximity += 1 / Math.pow(
-						Math.pow(Math.abs(nodePosition.x + nodePosition.width - proposedX) + Math.abs(proposedX + from.width - nodePosition.x), 2) +
-						Math.pow(Math.abs(nodePosition.y + nodePosition.height - proposedY) + Math.abs(proposedY + from.height - nodePosition.y), 2), 2)
+						Math.pow(nodePosition.x + nodePosition.width - proposedX, 2) +
+						Math.pow(proposedX + from.width - nodePosition.x, 2) -
+						Math.pow(from.width, 2) / 2 - Math.pow(nodePosition.width, 2) / 2 +
+						Math.pow(nodePosition.y + nodePosition.height - proposedY, 2) +
+						Math.pow(proposedY + from.height - nodePosition.y, 2) -
+						Math.pow(from.height, 2) / 2 - Math.pow(nodePosition.height, 2) / 2, 2)
 				}
 				if(proximity < bestProximity){
 					bestProximity = proximity
@@ -108,7 +126,7 @@ define(['./create'], function(create){
 			position: 'absolute',
 			left: sourceX + 'px',
 			top: sourceY + 'px',
-			backgroundColor: '#888',
+			backgroundColor: '#321',
 			height: '3px',
 			width: Math.sqrt(Math.pow(targetX - sourceX, 2) + Math.pow(targetY - sourceY, 2)) + 'px',
 			zIndex: 200,
@@ -176,13 +194,13 @@ define(['./create'], function(create){
 
 	}
 	return {
-		setContainer: function(containerElement){
+		setContainer: function(containerElement) {
 			container = containerElement
 			columns = []
 			allNodes = []
 		},
-		layout: function(nodes, edges){
-			nodes.forEach(function(node){
+		layout: function(nodes, edges) {
+			nodes.forEach(function(node) {
 				var to = node.to
 				if(to){
 					var toPosition = getAbsolutePosition(to)
@@ -196,6 +214,12 @@ define(['./create'], function(create){
 			})
 			drawEdges(edges)
 			allEdges = allEdges.concat(edges)
+		},
+		removeEdge: function(edge) {
+			allEdges.splice(allEdges.indexOf(edge), 1)
+			if (edge.element.parentNode) {
+				edge.element.parentNode.removeChild(edge.element)
+			}
 		},
 		refresh: function(){
 			drawEdges(allEdges)

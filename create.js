@@ -15,7 +15,7 @@ define([], function(){
 			maringRight: '6px',
 			borderTop: size + 'px solid transparent',
 			borderBottom: size + 'px solid transparent',
-			borderLeft: size + 'px solid #888'
+			borderLeft: size + 'px solid #321'
 		})
 	}
 	create.triangle = makeTriangle
