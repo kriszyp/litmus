@@ -199,6 +199,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 				maxHeight: boundY + 'px',
 				overflow: 'auto'
 			})
+			box.isVariable = true
 			box.textContent = text
 
 			if(!parent){
@@ -345,16 +346,16 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 		})
 		var draggedVariable, offsetX, offsetY
 		container.addEventListener('dragstart', function(event){
-			console.log("dragstart")
 			draggedVariable = event.target
+			draggedVariable = draggedVariable.isVariable && draggedVariable
 			offsetX = draggedVariable.offsetLeft - event.clientX
 			offsetY = draggedVariable.offsetTop - event.clientY
 		})
-		container.addEventListener('dragover', function(event){
+		document.body.addEventListener('dragover', function(event){
 			event.preventDefault()
 			event.dataTransfer.dropEffect = 'move'
 		})
-		container.addEventListener('drop', function(event){
+		document.body.addEventListener('drop', function(event){
 			if(draggedVariable){
 				draggedVariable.style.left = (event.clientX + offsetX) + 'px'
 				draggedVariable.style.top = (event.clientY + offsetY) + 'px'
