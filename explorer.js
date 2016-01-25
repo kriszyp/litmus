@@ -348,8 +348,10 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 		container.addEventListener('dragstart', function(event){
 			draggedVariable = event.target
 			draggedVariable = draggedVariable.isVariable && draggedVariable
-			offsetX = draggedVariable.offsetLeft - event.clientX
-			offsetY = draggedVariable.offsetTop - event.clientY
+			if (draggedVariable) {
+				offsetX = draggedVariable.offsetLeft - event.clientX
+				offsetY = draggedVariable.offsetTop - event.clientY
+			}
 		})
 		document.body.addEventListener('dragover', function(event){
 			event.preventDefault()
