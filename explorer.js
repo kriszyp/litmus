@@ -300,6 +300,9 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 					addConnection(processVariable(args[i], dependent), variableElement, '' + i)
 				}
 			}
+			if(variable.copiedFrom){
+				addConnection(processVariable(variable.copiedFrom, dependent), variableElement, 'copied from')
+			}
 			if(variable.functionVariable){
 				processVariable(variable.functionVariable, dependent, variableElement)
 			}

@@ -143,7 +143,9 @@ define(['./create'], function(create){
 			position: 'absolute',
 			left: midX + 'px',
 			top: midY + 'px',
-			zIndex: 200
+			zIndex: 200,
+			color: '#000',
+			fontSize: '14px'
 		})
 		labelNode.textContent = label
 		return arrowContainer
