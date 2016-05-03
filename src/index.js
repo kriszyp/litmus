@@ -29,7 +29,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 		instrumentVariableClass(Variable.Call)
 	}
 	var container;
-	return function(options){
+	return window.litmus = function(options){
 		var justRefresh = false
 		if(container){
 			container.style.display = 'block'
@@ -171,7 +171,7 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 				if(!event || !box.contains(event.target) && container.contains(box)){
 					container.removeChild(box)
 				}
-				container.removeEventListener(dismiss)
+				container.removeEventListener(dismiss, false)
 			}
 			container.addEventListener('click', dismiss)
 			var changes = variable.changes
