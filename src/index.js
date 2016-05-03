@@ -106,6 +106,9 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 
 		var processed = {}
 		function addConnection(source, target, label){
+			if (!source) {
+				return
+			}
 			var edge = {
 				source: source,
 				target: target,
@@ -225,6 +228,9 @@ define(['alkali/Updater', 'alkali/Variable', './graph', './create'], function(Up
 			return box
 		}
 		function processVariable(variable, dependent, parent, key, keepClosed){
+			if (!variable || !variable.subscribe){
+				return
+			}
 			var variableId
 			if(variable.parent){
 				processVariable(variable.parent, dependent, null, null, key)
